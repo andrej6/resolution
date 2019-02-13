@@ -19,7 +19,7 @@ cargo build
 
 Currently, there are no dependencies, so that should do the trick.
 We will eventually be depending on (at least)
-(gtk-rs)[https://crates.io/crates/gtk],
+[gtk-rs](https://crates.io/crates/gtk),
 which requires the GTK+3 development libraries to be installed. On
 Debian-based Linux:
 
@@ -40,4 +40,4 @@ cargo doc --open
 
 ## License
 
-MIT license. See `LICENSE.txt` for further details.
+MIT license. See [LICENSE.txt](LICENSE.txt) for further details.
