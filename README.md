@@ -13,7 +13,7 @@ Logic_ course at RPI, Spring 2019.
 
 This project is written in Rust and uses Cargo as a build system.
 
-```
+```bash
 cargo build
 ```
 
@@ -23,7 +23,7 @@ We will eventually be depending on (at least)
 which requires the GTK+3 development libraries to be installed. On
 Debian-based Linux:
 
-```
+```bash
 sudo apt update; sudo apt install libgtk-3-dev
 ```
 
@@ -34,7 +34,7 @@ See the gtk-rs docs for other platforms and troubleshooting.
 We will strive to keep the in-source developer documentation up to date. To
 build and view the documentation:
 
-```
+```bash
 cargo doc --open
 ```
 
