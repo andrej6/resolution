@@ -1,0 +1,7 @@
+[package]
+name = "resolution"
+version = "0.1.0"
+authors = ["John Andrews <andrej6@rpi.edu>", "Jacques Becker <beckej3@rpi.edu>"]
+edition = "2018"
+
+[dependencies]
