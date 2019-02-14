@@ -1,6 +1,6 @@
 /// Syntax tree representation for logical expressions.
 ///
-/// Currently, only propositional (truth-functional) logic is supported.
+/// Currently, only propositional (truth-functional) logic is represented.
 
 use std::fmt::{self, Formatter, Display};
 use regex::Regex;
@@ -25,19 +25,18 @@ impl Var {
             None
         }
     }
+}
 
-    /// Create a new variable with the given name. Checks the name
-    /// against the regex `[a-zA-Z_][a-zA-Z0-9_]*`, and panics if it doesn't
-    /// match.
-    pub fn new_unwrap(name: &str) -> Var {
+/// Similar to [`Var::new()`], `Var::from()` creates a new `Var` with
+/// the given name. Unlike [`Var::new()`], however, `Var::from()`
+/// will panic if the regex test fails; it should not be used
+/// to create a `Var` from user input. Hence, `From` is only
+/// implemented for `&'static str`s (string literals).
+///
+/// [`Var::new()`]: struct.Var.html#method.new
+impl From<&'static str> for Var {
+    fn from(name: &'static str) -> Var {
         Var::new(name).unwrap()
-    }
-
-    /// Create a new variable with the given name. Checks the name
-    /// against the regex `[a-zA-Z_][a-zA-Z0-9_]*`, and panics with the given
-    /// message if it doesn't match.
-    pub fn new_expect(name: &str, msg: &str) -> Var {
-        Var::new(name).expect(msg)
     }
 }
 
@@ -141,6 +140,17 @@ impl Expr {
     }
 }
 
+/* Unicode codepoints, for reference:
+ * → : U+2192
+ * ↔ : U+2194
+ * ¬ : U+00AC
+ * ∧ : U+2227
+ * ∨ : U+2228
+ * ⊥ : U+22A5
+ * ∀ : U+2200
+ * ∃ : U+2203
+ */
+
 impl Display for Var {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -150,7 +160,7 @@ impl Display for Var {
 impl Display for UnarySym {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Not => write!(f, "~"),
+            Not => write!(f, "¬"),
         }
     }
 }
@@ -158,7 +168,7 @@ impl Display for UnarySym {
 impl Display for BinarySym {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Implies => write!(f, "->"),
+            Implies => write!(f, "→"),
         }
     }
 }
@@ -166,9 +176,9 @@ impl Display for BinarySym {
 impl Display for AssocBinarySym {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            And => write!(f, "&"),
-            Or => write!(f, "|"),
-            Bicond => write!(f, "<->"),
+            And => write!(f, "∧"),
+            Or => write!(f, "∨"),
+            Bicond => write!(f, "↔"),
         }
     }
 }
@@ -187,11 +197,7 @@ impl Display for Expr {
             },
 
             UnaryOp { op, operand } => {
-                // Okay, so `operand` is a `&Box<Expr>`, so we need to deref
-                // once to get a `Box<Expr>` and then deref again to get an `Expr`
-                // and then make a ref from that so we don't move it in the pattern
-                // match... boy, the borrow rules are bonkers...
-                match &**operand {
+                match operand.as_ref() {
                     // Put parentheses only around non-literal expressions
                     Pred{..} | UnaryOp{..} => write!(f, "{}{}", op, operand),
                     _ => write!(f, "{}({})", op, operand),
@@ -199,14 +205,14 @@ impl Display for Expr {
             }
 
             BinaryOp { op, left, right } => {
-                match &**left {
+                match left.as_ref() {
                     Pred{..} | UnaryOp{..} => write!(f, "{}", left),
                     _ => write!(f, "({})", left),
                 }?;
 
                 write!(f, " {} ", op)?;
 
-                match &**right {
+                match right.as_ref() {
                     Pred{..} | UnaryOp{..} => write!(f, "{}", right),
                     _ => write!(f, "({})", right),
                 }
@@ -243,58 +249,58 @@ mod test {
 
     #[test]
     fn write_pred() {
-        let v = Var::new_unwrap("P");
+        let v = Var::from("P");
 
         let p = Expr::prop(v.clone());
         let s = format!("{}", p);
         assert_eq!(s, "P");
 
-        let p = Expr::pred(v.clone(), vec!["a","b","c"].into_iter().map(Var::new_unwrap).collect());
+        let p = Expr::pred(v.clone(), vec!["a","b","c"].into_iter().map(Var::from).collect());
         let s = format!("{}", p);
         assert_eq!(s, "P(a, b, c)");
     }
 
     #[test]
     fn write_unary() {
-        let p = Expr::prop(Var::new_unwrap("P"));
-        let q = Expr::prop(Var::new_unwrap("Q"));
+        let p = Expr::prop(Var::from("P"));
+        let q = Expr::prop(Var::from("Q"));
 
         let exp = Expr::not(p.clone());
         let s = format!("{}", exp);
-        assert_eq!(s, "~P");
+        assert_eq!(s, "¬P");
 
         let exp = Expr::not(Expr::and(vec![p.clone(), q.clone()]).unwrap());
         let s = format!("{}", exp);
-        assert_eq!(s, "~(P & Q)");
+        assert_eq!(s, "¬(P ∧ Q)");
     }
 
     #[test]
     fn write_binary() {
-        let p = Expr::prop(Var::new_unwrap("P"));
-        let q = Expr::prop(Var::new_unwrap("Q"));
-        let r = Expr::prop(Var::new_unwrap("R"));
+        let p = Expr::prop(Var::from("P"));
+        let q = Expr::prop(Var::from("Q"));
+        let r = Expr::prop(Var::from("R"));
 
         let exp = Expr::implies(p.clone(), q.clone());
         let s = format!("{}", exp);
-        assert_eq!(s, "P -> Q");
+        assert_eq!(s, "P → Q");
 
         let exp = Expr::implies(Expr::not(r.clone()),
             Expr::or(vec![p.clone(), q.clone()]).unwrap());
         let s = format!("{}", exp);
-        assert_eq!(s, "~R -> (P | Q)");
+        assert_eq!(s, "¬R → (P ∨ Q)");
     }
 
     #[test]
     fn write_assoc_binary() {
-        let p = Expr::prop(Var::new_unwrap("P"));
-        let q = Expr::prop(Var::new_unwrap("Q"));
+        let p = Expr::prop(Var::from("P"));
+        let q = Expr::prop(Var::from("Q"));
 
         let conj = Expr::and(vec![p.clone(), Expr::not(p.clone())]).unwrap();
         let s = format!("{}", conj);
-        assert_eq!(s, "P & ~P");
+        assert_eq!(s, "P ∧ ¬P");
 
         let disj = Expr::or(vec![q.clone(), p.clone(), conj]).unwrap();
         let s = format!("{}", disj);
-        assert_eq!(s, "Q | P | (P & ~P)");
+        assert_eq!(s, "Q ∨ P ∨ (P ∧ ¬P)");
     }
 }
