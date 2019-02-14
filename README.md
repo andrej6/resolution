@@ -11,15 +11,15 @@ Logic_ course at RPI, Spring 2019.
 
 ## Building
 
-This project is written in Rust and uses Cargo as a build system.
+This project is written in Rust and uses Cargo as a build system. The following
+should download all dependencies and build the project:
 
 ```bash
 cargo build
 ```
 
-Currently, there are no dependencies, so that should do the trick.
-We will eventually be depending on (at least)
-[gtk-rs](https://crates.io/crates/gtk),
+Currently, there are no dependencies which require special consideration.
+However, we will eventually be depending on [gtk-rs](https://crates.io/crates/gtk),
 which requires the GTK+3 development libraries to be installed. On
 Debian-based Linux:
 
