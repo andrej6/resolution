@@ -127,34 +127,34 @@ It proceeds in phases, each of which should be iterated on the root node until i
 is no longer applicable, and then applied recursively to the root's subtrees, before
 moving on to the next phase.
 1. Destructure `->` and `<->` nodes:
-  - `P -> Q  =>  ~P | Q`
-  - `P <-> Q  =>  (P & Q) | (~P & ~Q)`
+   - `P -> Q  =>  ~P | Q`
+   - `P <-> Q  =>  (P & Q) | (~P & ~Q)`
 
-  (After this phase, the tree will consist only of `&`, `|`, and literal nodes.)
+   (After this phase, the tree will consist only of `&`, `|`, and literal nodes.)
 
 2. Apply DeMorgan's laws and eliminate double negation:
-  - `~(P & Q)  =>  ~P | ~Q`
-  - `~(P | Q)  =>  ~P & ~Q`
-  - ~~P  =>  P
+   - `~(P & Q)  =>  ~P | ~Q`
+   - `~(P | Q)  =>  ~P & ~Q`
+   - ~~P  =>  P
 
-  After this phase, only literals will be children of `~` nodes.
+   After this phase, only literals will be children of `~` nodes.
 
 3. Commute certain `&` and `|` nodes. Specifically:
-  - `(P | Q) & R  =>  R & (P | Q)` where `R` is not a `|` node
-  - `(P & Q) | R  =>  R | (P & Q)` where `R` is not a `&` node
+   - `(P | Q) & R  =>  R & (P | Q)` where `R` is not a `|` node
+   - `(P & Q) | R  =>  R | (P & Q)` where `R` is not a `&` node
 
-  This phase is not strictly necessary, but it simplifies the next phase by
-  limiting the number of patterns that need to be searched for.
+   This phase is not strictly necessary, but it simplifies the next phase by
+   limiting the number of patterns that need to be searched for.
 
 3. Distribute `|` nodes and un-distribute `&` nodes:
-  - `P | (Q & R)  => (P | Q) & (P | R)`
-  - `(P & Q) | (P & R)  =>  P & (Q | R)`
+   - `P | (Q & R)  => (P | Q) & (P | R)`
+   - `(P & Q) | (P & R)  =>  P & (Q | R)`
 
-  A node of the form `(P & Q) | (R & S)` should be handled by first
-  checking if either of `P` or `Q` is equal to either of `R` or `S`.
-  If so, the `&` should be un-distributed. Otherwise,
-  `(P & Q)`, as a single node, should be distributed over `R & S`.
+   A node of the form `(P & Q) | (R & S)` should be handled by first
+   checking if either of `P` or `Q` is equal to either of `R` or `S`.
+   If so, the `&` should be un-distributed. Otherwise,
+   `(P & Q)`, as a single node, should be distributed over `R & S`.
 
-  After this phase, no `&` nodes will be ancestors of `|` nodes.
+   After this phase, no `&` nodes will be ancestors of `|` nodes.
 
 4. Canonicalize the tree, as described above.
