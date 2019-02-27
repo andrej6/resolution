@@ -1,6 +1,6 @@
-/// Syntax tree representation for logical expressions.
-///
-/// Currently, only propositional (truth-functional) logic is represented.
+//! Syntax tree representation for logical expressions.
+//!
+//! Currently, only propositional (truth-functional) logic is represented.
 
 use std::fmt::{self, Formatter, Display};
 use regex::Regex;
