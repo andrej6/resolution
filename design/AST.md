@@ -12,12 +12,12 @@ The AST consists of the following node types:
 - Negation (`~`) -- one child
 - Implication (`->`) -- two children
 - Biconditional (`<->`) -- two children
-- Identifier (string) -- leaf node
+- Proposition (string) -- leaf node
 - Tautology (`T`) -- leaf node
 - Contradiction/bottom (`F`) -- leaf node
 
-We will refer to ID nodes, tautology, and contradiction collectively as literals.
-(This is a slight departure from the usual terminology for propositional logic,
+We will refer to proposition, tautology, and contradiction nodes collectively as
+literals.  (This is a slight departure from the usual terminology for propositional logic,
 in which a literal is either a proposition or a negation of a proposition.)
 
 ## AST transformations
@@ -109,7 +109,7 @@ child; similar for `|` and `<->`. An algorithm for generating such a tree is:
 
 We will usually be interested in transforming a statement into CNF. A canonical CNF tree
 is defined by the following properties:
-1. The tree contains no nodes except `&`, `|`, `~`, and literals (ID's, tautology, or contradiction).
+1. The tree contains no nodes except `&`, `|`, `~`, and literals,
 2. No `&` node is an ancestor of any `|` node, (the tree is purely conjunctions of disjunctions,)
 3. No `&` or `|` node is an ancestor of any `~` node, (only literals are negated,)
 4. The tree is in canonical form.
