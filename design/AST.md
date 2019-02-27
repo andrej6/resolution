@@ -17,7 +17,8 @@ The AST consists of the following node types:
 - Contradiction/bottom (`F`) -- leaf node
 
 We will refer to ID nodes, tautology, and contradiction collectively as literals.
-(This is a slight departure from the usual terminology for p
+(This is a slight departure from the usual terminology for propositional logic,
+in which a literal is either a proposition or a negation of a proposition.)
 
 ## AST transformations
 
