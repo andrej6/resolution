@@ -1,9 +1,13 @@
+#![deprecated(
+    note = "Work is in progress to redesign the AST. See the [`ast`](../ast/index.html) module."
+)]
+
 //! Syntax tree representation for logical expressions.
 //!
 //! Currently, only propositional (truth-functional) logic is represented.
 
-use std::fmt::{self, Formatter, Display};
 use regex::Regex;
+use std::fmt::{self, Display, Formatter};
 
 /// A variable name.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -75,16 +79,23 @@ use AssocBinarySym::*;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
     /// A predicate expression.
-    Pred { name: Var, args: Vec<Var>, },
+    Pred { name: Var, args: Vec<Var> },
 
     /// A unary operator expression.
-    UnaryOp { op: UnarySym, operand: Box<Expr>, },
+    UnaryOp { op: UnarySym, operand: Box<Expr> },
 
     /// A non-associative binary operator expression.
-    BinaryOp { op: BinarySym, left: Box<Expr>, right: Box<Expr>, },
+    BinaryOp {
+        op: BinarySym,
+        left: Box<Expr>,
+        right: Box<Expr>,
+    },
 
     /// A string of operands joined by a single associative binary operator.
-    AssocBinaryOp { op: AssocBinarySym, operands: Vec<Expr>, },
+    AssocBinaryOp {
+        op: AssocBinarySym,
+        operands: Vec<Expr>,
+    },
 }
 
 impl Expr {
@@ -94,7 +105,7 @@ impl Expr {
         if operands.len() < 2 {
             None
         } else {
-            Some(Expr::AssocBinaryOp { op: And, operands, })
+            Some(Expr::AssocBinaryOp { op: And, operands })
         }
     }
 
@@ -110,12 +121,19 @@ impl Expr {
 
     /// Consume an expression and create its negation.
     pub fn not(operand: Expr) -> Expr {
-        Expr::UnaryOp { op: Not, operand: Box::new(operand), }
+        Expr::UnaryOp {
+            op: Not,
+            operand: Box::new(operand),
+        }
     }
 
     /// Consume two expressions and create the expression `left` implies `right`.
     pub fn implies(left: Expr, right: Expr) -> Expr {
-        Expr::BinaryOp { op: Implies, left: Box::new(left), right: Box::new(right), }
+        Expr::BinaryOp {
+            op: Implies,
+            left: Box::new(left),
+            right: Box::new(right),
+        }
     }
 
     /// Create a chain of biconditionals between the given expressions. Returns
@@ -124,7 +142,10 @@ impl Expr {
         if operands.len() < 2 {
             None
         } else {
-            Some(Expr::AssocBinaryOp { op: Bicond, operands })
+            Some(Expr::AssocBinaryOp {
+                op: Bicond,
+                operands,
+            })
         }
     }
 
@@ -146,6 +167,7 @@ impl Expr {
  * ¬ : U+00AC
  * ∧ : U+2227
  * ∨ : U+2228
+ * ⊤ : U+22A4
  * ⊥ : U+22A5
  * ∀ : U+2200
  * ∃ : U+2203
@@ -188,43 +210,50 @@ impl Display for Expr {
         use Expr::*;
         match self {
             // Proposition (predicate with no arguments)
-            Pred { name, args } if args.len() == 0 => write!(f, "{}", name),
-            
+            Pred { name, args } if args.is_empty() => write!(f, "{}", name),
+
             // Predicate
-            Pred { name, args } => {
-                write!(f, "{}({})", name,
-                    args.iter().map(<Var as ToString>::to_string).collect::<Vec<_>>().join(", "))
-            },
+            Pred { name, args } => write!(
+                f,
+                "{}({})",
+                name,
+                args.iter()
+                    .map(<Var as ToString>::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
 
             UnaryOp { op, operand } => {
                 match operand.as_ref() {
                     // Put parentheses only around non-literal expressions
-                    Pred{..} | UnaryOp{..} => write!(f, "{}{}", op, operand),
+                    Pred { .. } | UnaryOp { .. } => write!(f, "{}{}", op, operand),
                     _ => write!(f, "{}({})", op, operand),
                 }
             }
 
             BinaryOp { op, left, right } => {
                 match left.as_ref() {
-                    Pred{..} | UnaryOp{..} => write!(f, "{}", left),
+                    Pred { .. } | UnaryOp { .. } => write!(f, "{}", left),
                     _ => write!(f, "({})", left),
                 }?;
 
                 write!(f, " {} ", op)?;
 
                 match right.as_ref() {
-                    Pred{..} | UnaryOp{..} => write!(f, "{}", right),
+                    Pred { .. } | UnaryOp { .. } => write!(f, "{}", right),
                     _ => write!(f, "({})", right),
                 }
-            },
+            }
 
             AssocBinaryOp { op, operands } => {
-                let operands = operands.iter().map(|x| {
-                    match x {
-                        Pred{..} | UnaryOp{..} => format!("{}", x),
+                let operands = operands
+                    .iter()
+                    .map(|x| match x {
+                        Pred { .. } | UnaryOp { .. } => format!("{}", x),
                         _ => format!("({})", x),
-                    }
-                }).collect::<Vec<_>>().join(&format!(" {} ", op));
+                    })
+                    .collect::<Vec<_>>()
+                    .join(&format!(" {} ", op));
 
                 write!(f, "{}", operands)
             }
@@ -255,7 +284,10 @@ mod test {
         let s = format!("{}", p);
         assert_eq!(s, "P");
 
-        let p = Expr::pred(v.clone(), vec!["a","b","c"].into_iter().map(Var::from).collect());
+        let p = Expr::pred(
+            v.clone(),
+            vec!["a", "b", "c"].into_iter().map(Var::from).collect(),
+        );
         let s = format!("{}", p);
         assert_eq!(s, "P(a, b, c)");
     }
@@ -284,8 +316,10 @@ mod test {
         let s = format!("{}", exp);
         assert_eq!(s, "P → Q");
 
-        let exp = Expr::implies(Expr::not(r.clone()),
-            Expr::or(vec![p.clone(), q.clone()]).unwrap());
+        let exp = Expr::implies(
+            Expr::not(r.clone()),
+            Expr::or(vec![p.clone(), q.clone()]).unwrap(),
+        );
         let s = format!("{}", exp);
         assert_eq!(s, "¬R → (P ∨ Q)");
     }
