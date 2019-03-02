@@ -5,6 +5,6 @@ authors = ["John Andrews <andrej6@rpi.edu>", "Jacques Becker <beckej3@rpi.edu>"]
 edition = "2018"
 
 [dependencies]
-regex = "1.1.0"
-lazy_static = "1.2.0"
-derive_is_enum_variant = "0.1.1"
+regex = "1.1"
+lazy_static = "1.2"
+derive_is_enum_variant = "0.1"
