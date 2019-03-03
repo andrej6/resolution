@@ -22,7 +22,8 @@ an atomic.
 
 ## AST transformations
 
-We can translate various logical equivalences into transformations of the AST:
+We can translate various logical equivalences into transformations of the AST. In
+the following, `P`, `Q`, `R`, etc. stand for arbitrary subtrees.
 
 - Associativity and commutativity of `&`, `|`, and `<->`:
   ```

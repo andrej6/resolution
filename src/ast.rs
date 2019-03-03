@@ -169,6 +169,58 @@ impl Node {
             self.swap_children();
         }
     }
+
+    /// Convert the AST in-place to fully left-associative form.
+    ///
+    /// Specifically, this method will transform the AST so that all chains of
+    /// associative `Node`s are fully left-associative. E.g., a `Conj` may only
+    /// have one child that is also a `Conj`, and such a child must be the left
+    /// one; similar for the other associative `Node` variants, `Disj` and
+    /// `Bicond`.
+    pub fn make_left_associative(&mut self) {}
+
+    /// Eliminate all double-negations from the AST.
+    pub fn elim_double_neg(&mut self) {
+        if let Neg(child) = self {
+            if let Neg(grandchild) = child.as_mut() {
+                *self = grandchild.as_ref().clone();
+                self.elim_double_neg();
+            } else {
+                child.elim_double_neg();
+            }
+        } else {
+            let (left, right): (&mut Box<Node>, &mut Box<Node>) = match self {
+                Conj(ref mut l, ref mut r) => (l, r),
+                Disj(ref mut l, ref mut r) => (l, r),
+                Impl(ref mut l, ref mut r) => (l, r),
+                Bicond(ref mut l, ref mut r) => (l, r),
+                _ => return,
+            };
+
+            left.elim_double_neg();
+            right.elim_double_neg();
+        }
+    }
+
+    /// Convert the AST in-place to canonical form; i.e. fully left-associative
+    /// and with no double negation.
+    ///
+    /// This form is "canonical" in the sense that the permitted syntactic relationships
+    /// between `Node`s is tightly controlled; it is _not_ "canonical" in the sense that
+    /// any two equivalent logic expressions will reduce to the same canonical tree. In
+    /// particular, this method does not sort the leaves of the AST in any way, nor does
+    /// it de-duplicate them or apply any logical inferences or equivalences besides
+    /// associativity of conjunction, disjunction, and biconditional, and double-negation
+    /// elimination.
+    pub fn canonicalize(&mut self) {
+        self.make_left_associative();
+        self.elim_double_neg();
+    }
+
+    /// Convert the `Node` in-place to conjunctive normal form.
+    ///
+    /// Specifically, this method
+    pub fn make_cnf(&mut self) {}
 }
 
 /* Unicode codepoints, for reference:
@@ -253,5 +305,53 @@ impl Display for Node {
             Taut => write!(f, "⊤"),
             Bottom => write!(f, "⊥"),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn elim_double_neg_simple() {
+        let mut node = Node::not(Node::not(Node::prop("P")));
+        node.elim_double_neg();
+        assert_eq!(node, Node::prop("P"));
+
+        let mut node = Node::not(Node::not(Node::not(Node::prop("P"))));
+        node.elim_double_neg();
+        assert_eq!(node, Node::not(Node::prop("P")));
+
+        let mut node = Node::not(Node::not(Node::not(Node::not(Node::prop("P")))));
+        node.elim_double_neg();
+        assert_eq!(node, Node::prop("P"));
+    }
+
+    #[test]
+    fn elim_double_neg_complex() {
+        // ~~P & ~Q == Q & ~Q
+        let mut node = Node::and(
+            Node::not(Node::not(Node::prop("P"))),
+            Node::not(Node::prop("Q")),
+        );
+        node.elim_double_neg();
+        assert_eq!(node, Node::and(Node::prop("P"), Node::not(Node::prop("Q"))));
+
+        // ~(~~P & Q) --> ~~R == ~(P & Q) --> R
+        let mut node = Node::implies(
+            Node::not(Node::and(
+                Node::not(Node::not(Node::prop("P"))),
+                Node::prop("Q"),
+            )),
+            Node::not(Node::not(Node::prop("R"))),
+        );
+        node.elim_double_neg();
+        assert_eq!(
+            node,
+            Node::implies(
+                Node::not(Node::and(Node::prop("P"), Node::prop("Q"))),
+                Node::prop("R")
+            )
+        );
     }
 }
