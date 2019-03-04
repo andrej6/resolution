@@ -1,24 +1,24 @@
-use resolution::ast::Node;
+use resolution::ast::Ast;
 
 fn main() {
-    let expr = Node::and(
-        Node::or(Node::prop("P"), Node::not(Node::prop("Q"))),
-        Node::not(Node::and(
-            Node::prop("Q"),
-            Node::implies(Node::prop("W"), Node::not(Node::prop("W"))),
+    let expr = Ast::and(
+        Ast::or(Ast::prop("P"), Ast::not(Ast::prop("Q"))),
+        Ast::not(Ast::and(
+            Ast::prop("Q"),
+            Ast::implies(Ast::prop("W"), Ast::not(Ast::prop("W"))),
         )),
     );
     println!("{}", expr);
 
-    let expr = Node::and(
-        Node::and(Node::and(Node::prop("P"), Node::prop("Q")), Node::prop("R")),
-        Node::or(Node::prop("S"), Node::prop("T")),
+    let expr = Ast::and(
+        Ast::and(Ast::and(Ast::prop("P"), Ast::prop("Q")), Ast::prop("R")),
+        Ast::or(Ast::prop("S"), Ast::prop("T")),
     );
     println!("{}", expr);
 
-    let expr = Node::and(
-        Node::and(Node::prop("P"), Node::prop("Q")),
-        Node::and(Node::prop("R"), Node::prop("S")),
+    let expr = Ast::and(
+        Ast::and(Ast::prop("P"), Ast::prop("Q")),
+        Ast::and(Ast::prop("R"), Ast::prop("S")),
     );
     println!("{}", expr);
 }

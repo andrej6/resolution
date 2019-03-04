@@ -5,7 +5,7 @@ use std::fmt::{self, Display, Formatter};
 /// A node in the syntax tree.
 ///
 /// Until [box patterns] get stabilized, pattern matching across multiple levels
-/// of a recursive data type is a pain. To help out a little bit, `Node` defines
+/// of a recursive data type is a pain. To help out a little bit, `Ast` defines
 /// inline `is_{variant}` methods for each variant, (i.e. [`is_conj`], [`is_disj`], etc.).
 /// These can be used in match guards to make two-level matching a little more
 /// ergonomic.
@@ -14,21 +14,21 @@ use std::fmt::{self, Display, Formatter};
 /// [`is_conj`]: #method.is_conj
 /// [`is_disj`]: #method.is_disj
 #[derive(Debug, PartialEq, Eq, Clone, is_enum_variant)]
-pub enum Node {
+pub enum Ast {
     /// The conjunction (AND) of the two child expressions.
-    Conj(Box<Node>, Box<Node>),
+    Conj(Box<Ast>, Box<Ast>),
 
     /// The disjunction (OR) of the two child expressions.
-    Disj(Box<Node>, Box<Node>),
+    Disj(Box<Ast>, Box<Ast>),
 
     /// The negation of the child expression.
-    Neg(Box<Node>),
+    Neg(Box<Ast>),
 
     /// Material implication from the first child expression to the second.
-    Impl(Box<Node>, Box<Node>),
+    Impl(Box<Ast>, Box<Ast>),
 
     /// Biconditional between the two child expressions.
-    Bicond(Box<Node>, Box<Node>),
+    Bicond(Box<Ast>, Box<Ast>),
 
     /// An atomic proposition.
     Prop(String),
@@ -40,7 +40,7 @@ pub enum Node {
     Bottom,
 }
 
-use Node::*;
+use Ast::*;
 
 /// An enum to represent the arity of an AST node.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
@@ -50,48 +50,49 @@ pub enum Arity {
     Binary,
 }
 
-impl Node {
+impl Ast {
     // Constructors
 
     /// Create a `Conj` from the given conjuncts.
     #[inline]
-    pub fn and(p: Node, q: Node) -> Node {
+    pub fn and(p: Ast, q: Ast) -> Ast {
         Conj(Box::new(p), Box::new(q))
     }
 
     /// Create a `Disj` from the given disjuncts.
     #[inline]
-    pub fn or(p: Node, q: Node) -> Node {
+    pub fn or(p: Ast, q: Ast) -> Ast {
         Disj(Box::new(p), Box::new(q))
     }
 
-    /// Create a `Neg` negating the given `Node`.
+    /// Create a `Neg` negating the given `Ast`.
     #[inline]
-    pub fn not(p: Node) -> Node {
+    pub fn not(p: Ast) -> Ast {
         Neg(Box::new(p))
     }
 
-    /// Create an `Impl` from the given `Node`s (`p` implies `q`).
+    /// Create an `Impl` from the given `Ast`s (`p` implies `q`).
     #[inline]
-    pub fn implies(p: Node, q: Node) -> Node {
+    pub fn implies(p: Ast, q: Ast) -> Ast {
         Impl(Box::new(p), Box::new(q))
     }
 
-    /// Create a `Bicond` between the given `Node`s (`p` if and only if `q`).
+    /// Create a `Bicond` between the given `Ast`s (`p` if and only if `q`).
     #[inline]
-    pub fn iff(p: Node, q: Node) -> Node {
+    pub fn iff(p: Ast, q: Ast) -> Ast {
         Bicond(Box::new(p), Box::new(q))
     }
 
     /// Create a `Prop` with the given name.
     #[inline]
-    pub fn prop(name: &str) -> Node {
+    pub fn prop(name: &str) -> Ast {
         Prop(String::from(name))
     }
 
     // Inspection utilities
 
-    /// Atomic `Node`s are leaf `Node`s, i.e. `Prop`, `Taut`, and `Bottom`.
+    /// Is this `Ast` atomic? (Atomic `Ast`s are leaf nodes,
+    /// i.e. `Prop`, `Taut`, and `Bottom`.)
     #[inline]
     pub fn is_atomic(&self) -> bool {
         match self {
@@ -100,7 +101,7 @@ impl Node {
         }
     }
 
-    /// A literal is an atomic or a negated atomic.
+    /// Is this `Ast` a literal? (Literals are atomics or negated atomics.)
     #[inline]
     pub fn is_literal(&self) -> bool {
         match self {
@@ -110,7 +111,7 @@ impl Node {
         }
     }
 
-    /// Is this `Node` an atomic or `Neg`?
+    /// Is this `Ast` an atomic or `Neg`?
     ///
     /// This predicate is mostly useful for pretty printing; atomics and
     /// negations do not require parentheses around them to disambiguate
@@ -120,7 +121,7 @@ impl Node {
         self.is_atomic() || self.is_neg()
     }
 
-    /// Is this `Node` associative?
+    /// Is this `Ast` associative?
     #[inline]
     pub fn is_assoc(&self) -> bool {
         match self {
@@ -129,13 +130,13 @@ impl Node {
         }
     }
 
-    /// Is this `Node` commutative?
+    /// Is this `Ast` commutative?
     #[inline]
     pub fn is_commut(&self) -> bool {
         self.is_assoc()
     }
 
-    /// Return the arity of this `Node`. `Nullary` (leaf) nodes have no children,
+    /// Return the arity of this `Ast`. `Nullary` (leaf) nodes have no children,
     /// `Unary` nodes have one child, and `Binary` nodes have two children.
     #[inline]
     pub fn arity(&self) -> Arity {
@@ -148,7 +149,7 @@ impl Node {
 
     // Manipulation utilities
 
-    /// Swaps the two children of a binary `Node`. For unary or leaf `Node`s,
+    /// Swaps the two children of a binary `Ast`. For unary or leaf nodes,
     /// this is a no-op.
     #[inline]
     pub fn swap_children(&mut self) {
@@ -161,8 +162,8 @@ impl Node {
         }
     }
 
-    /// Swap the two children of a commutative binary `Node`. For unary, leaf, or
-    /// non-cummutative binary `Node`s, this is a no-op.
+    /// Swap the two children of a commutative binary `Ast`. For unary, leaf, or
+    /// non-cummutative binary `Ast`s, this is a no-op.
     #[inline]
     pub fn commute(&mut self) {
         if self.is_commut() {
@@ -170,16 +171,16 @@ impl Node {
         }
     }
 
-    /// Convert the AST in-place to fully left-associative form.
+    /// Convert the `Ast` in-place to fully left-associative form.
     ///
-    /// Specifically, this method will transform the AST so that all chains of
-    /// associative `Node`s are fully left-associative. E.g., a `Conj` may only
+    /// Specifically, this method will transform the `Ast` so that all chains of
+    /// associative nodes are fully left-associative. E.g., a `Conj` may only
     /// have one child that is also a `Conj`, and such a child must be the left
-    /// one; similar for the other associative `Node` variants, `Disj` and
+    /// one; similar for the other associative `Ast` variants, `Disj` and
     /// `Bicond`.
     pub fn make_left_associative(&mut self) {}
 
-    /// Eliminate all double-negations from the AST.
+    /// Eliminate all double-negations from the `Ast`.
     pub fn elim_double_neg(&mut self) {
         if let Neg(child) = self {
             if let Neg(grandchild) = child.as_mut() {
@@ -189,7 +190,7 @@ impl Node {
                 child.elim_double_neg();
             }
         } else {
-            let (left, right): (&mut Box<Node>, &mut Box<Node>) = match self {
+            let (left, right): (&mut Box<Ast>, &mut Box<Ast>) = match self {
                 Conj(ref mut l, ref mut r) => (l, r),
                 Disj(ref mut l, ref mut r) => (l, r),
                 Impl(ref mut l, ref mut r) => (l, r),
@@ -202,13 +203,13 @@ impl Node {
         }
     }
 
-    /// Convert the AST in-place to canonical form; i.e. fully left-associative
+    /// Convert the `Ast` in-place to canonical form; i.e. fully left-associative
     /// and with no double negation.
     ///
     /// This form is "canonical" in the sense that the permitted syntactic relationships
-    /// between `Node`s is tightly controlled; it is _not_ "canonical" in the sense that
+    /// between nodes is tightly controlled; it is _not_ "canonical" in the sense that
     /// any two equivalent logic expressions will reduce to the same canonical tree. In
-    /// particular, this method does not sort the leaves of the AST in any way, nor does
+    /// particular, this method does not sort the leaves of the `Ast` in any way, nor does
     /// it de-duplicate them or apply any logical inferences or equivalences besides
     /// associativity of conjunction, disjunction, and biconditional, and double-negation
     /// elimination.
@@ -217,7 +218,7 @@ impl Node {
         self.elim_double_neg();
     }
 
-    /// Convert the `Node` in-place to conjunctive normal form.
+    /// Convert the `Ast` in-place to conjunctive normal form.
     ///
     /// Specifically, this method
     pub fn make_cnf(&mut self) {}
@@ -235,7 +236,7 @@ impl Node {
  * ∃ : U+2203
  */
 
-impl Display for Node {
+impl Display for Ast {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Conj(p, q)
@@ -314,43 +315,43 @@ mod test {
 
     #[test]
     fn elim_double_neg_simple() {
-        let mut node = Node::not(Node::not(Node::prop("P")));
+        let mut node = Ast::not(Ast::not(Ast::prop("P")));
         node.elim_double_neg();
-        assert_eq!(node, Node::prop("P"));
+        assert_eq!(node, Ast::prop("P"));
 
-        let mut node = Node::not(Node::not(Node::not(Node::prop("P"))));
+        let mut node = Ast::not(Ast::not(Ast::not(Ast::prop("P"))));
         node.elim_double_neg();
-        assert_eq!(node, Node::not(Node::prop("P")));
+        assert_eq!(node, Ast::not(Ast::prop("P")));
 
-        let mut node = Node::not(Node::not(Node::not(Node::not(Node::prop("P")))));
+        let mut node = Ast::not(Ast::not(Ast::not(Ast::not(Ast::prop("P")))));
         node.elim_double_neg();
-        assert_eq!(node, Node::prop("P"));
+        assert_eq!(node, Ast::prop("P"));
     }
 
     #[test]
     fn elim_double_neg_complex() {
         // ~~P & ~Q == Q & ~Q
-        let mut node = Node::and(
-            Node::not(Node::not(Node::prop("P"))),
-            Node::not(Node::prop("Q")),
+        let mut node = Ast::and(
+            Ast::not(Ast::not(Ast::prop("P"))),
+            Ast::not(Ast::prop("Q")),
         );
         node.elim_double_neg();
-        assert_eq!(node, Node::and(Node::prop("P"), Node::not(Node::prop("Q"))));
+        assert_eq!(node, Ast::and(Ast::prop("P"), Ast::not(Ast::prop("Q"))));
 
         // ~(~~P & Q) --> ~~R == ~(P & Q) --> R
-        let mut node = Node::implies(
-            Node::not(Node::and(
-                Node::not(Node::not(Node::prop("P"))),
-                Node::prop("Q"),
+        let mut node = Ast::implies(
+            Ast::not(Ast::and(
+                Ast::not(Ast::not(Ast::prop("P"))),
+                Ast::prop("Q"),
             )),
-            Node::not(Node::not(Node::prop("R"))),
+            Ast::not(Ast::not(Ast::prop("R"))),
         );
         node.elim_double_neg();
         assert_eq!(
             node,
-            Node::implies(
-                Node::not(Node::and(Node::prop("P"), Node::prop("Q"))),
-                Node::prop("R")
+            Ast::implies(
+                Ast::not(Ast::and(Ast::prop("P"), Ast::prop("Q"))),
+                Ast::prop("R")
             )
         );
     }

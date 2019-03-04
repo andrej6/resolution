@@ -158,3 +158,30 @@ moving on to the next phase.
    After this phase, no `&` nodes will be ancestors of `|` nodes.
 
 4. Canonicalize the tree, as described above.
+
+## Implementation details
+
+We want to be able to make arbitrary modifications, in-place, to an AST.
+Unfortunately, the natural implementation, using pointers between nodes and
+swapping pointers to modifiy the tree, is a pain in safe Rust thanks to the
+borrowing rules (a no-copy implementation requires lots and lots of mutable
+aliasing). We could drop into unsafe Rust for the AST manipulation
+primitives, but here are a few safe alternatives.
+
+1.  Use a [memory arena](https://rust-leipzig.github.io/architecture/2016/12/20/idiomatic-trees-in-rust/).
+    Each AST stores a vector of the nodes in the tree, and the nodes themselves store indices into this
+    vector as their children. This essentially replaces the raw pointers of the natural implementation
+    with integers, and eliminates any aliasing issues. Some drawbacks of this approach:
+    - Pattern matching ability will be somewhat curtailed, since the nodes do not refer directly
+      to their children.
+    - Removing nodes from the tree might be somewhat difficult. In particular, if a node is
+      removed from the arena, the index of at least one other node will need to change, which
+      will invalidate references to the changed node throughout the rest of the tree. A possible
+      mitigation is to use a map instead of a vector as the arena, and assign each node a unique,
+      unchanging integer ID rather than referencing them by location.
+2.  Use a [zipper](https://en.wikipedia.org/wiki/Zipper_%28data_structure%29)
+    ([see also](https://stackoverflow.com/a/36168919)).
+
+(It's worth noting that even the natural implementation requires indirection via
+`Box`es, which makes pattern matching a pain in and of itself, so the pattern matching
+considerations might not actually be that much of a drawback.)

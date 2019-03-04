@@ -3,7 +3,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate derive_is_enum_variant;
 
-pub mod expressions;
+mod common;
+
 pub mod ast;
 pub mod cnf;
-pub mod common;
