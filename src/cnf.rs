@@ -248,9 +248,11 @@ impl FromIterator<Literal> for Term {
     where
         T: IntoIterator<Item = Literal>,
     {
-        Term {
-            literals: HashSet::from_iter(iter),
+        let mut t = Term::new();
+        for lit in iter {
+            t.add(lit);
         }
+        t
     }
 }
 
@@ -313,6 +315,19 @@ mod test {
     use super::*;
 
     #[test]
+    fn term_macro() {
+        let t = cnf_term!(P, Q);
+        let mut expected = Term::new();
+        expected.add(Literal::new("P").unwrap());
+        expected.add(Literal::new("Q").unwrap());
+        assert_eq!(t, expected);
+
+        let t = cnf_term!(P, ~P);
+        let expected = Term::new();
+        assert_eq!(t, expected);
+    }
+
+    #[test]
     fn resolve1() {
         let t1 = cnf_term!(P);
         let t2 = cnf_term!(~P);
@@ -370,5 +385,47 @@ mod test {
         if let Some(_) = t.resolve(&t) {
             panic!("Self-resolution returned Some");
         }
+    }
+
+    #[test]
+    fn add_identical() {
+        let mut t = cnf_term!(P);
+        t.add(Literal::new("P").unwrap());
+
+        assert_eq!(t, cnf_term!(P));
+    }
+
+    #[test]
+    fn add_negated() {
+        let mut t = cnf_term!(P);
+        t.add(Literal::new_negated("P").unwrap());
+
+        assert_eq!(t, cnf_term!());
+    }
+
+    #[test]
+    fn collect() {
+        let t = vec![Literal::new("P"), Literal::new("Q")]
+            .into_iter()
+            .map(|o| o.unwrap())
+            .collect::<Term>();
+
+        let mut expected = Term::new();
+        expected.add(Literal::new("P").unwrap());
+        expected.add(Literal::new("Q").unwrap());
+
+        assert_eq!(t, expected);
+    }
+
+    #[test]
+    fn collect_negated() {
+        let t = vec![Literal::new("P"), Literal::new_negated("P")]
+            .into_iter()
+            .map(|o| o.unwrap())
+            .collect::<Term>();
+
+        let expected = Term::new();
+
+        assert_eq!(t, expected);
     }
 }
