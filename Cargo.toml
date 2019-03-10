@@ -7,4 +7,5 @@ edition = "2018"
 [dependencies]
 regex = "1.1"
 lazy_static = "1.2"
-derive_is_enum_variant = "0.1"
+#derive_is_enum_variant = "0.1"
+#either = "1.5"
