@@ -1,6 +1,6 @@
-//! Terms and conjunctive normal form representation of logic expressions.
+//! Clauses and conjunctive normal form representation of logic expressions.
 
-use super::common;
+//use super::common;
 use std::cmp::{Eq, PartialEq};
 use std::collections::{hash_set, HashSet};
 use std::fmt::{self, Display, Formatter};
@@ -16,52 +16,18 @@ pub struct Literal {
 
 impl Literal {
     /// Create a new, unnegated `Literal` with the given name.
-    ///
-    /// The name of each `Literal` is checked against the regex
-    /// `[a-zA-Z_][a-zA-Z0-9_]*` and rejected if it does not match.
-    ///
-    /// ```
-    /// # use resolution::cnf::*;
-    /// let lit = Literal::new("valid_name").unwrap();
-    /// assert_eq!(lit.name, "valid_name");
-    /// assert!(!lit.negated);
-    ///
-    /// let invalid = Literal::new("Not a valid name");
-    /// assert!(invalid.is_none());
-    /// ```
-    pub fn new(name: &str) -> Option<Literal> {
-        if common::is_valid_name(name) {
-            Some(Literal {
-                name: name.into(),
-                negated: false,
-            })
-        } else {
-            None
+    pub fn new(name: &str) -> Literal {
+        Literal {
+            name: name.into(),
+            negated: false,
         }
     }
 
     /// Create a new, negated `Literal` with the given name.
-    ///
-    /// The name of each `Literal` is checked against the regex `[a-zA-Z_][a-zA-Z0-9_]*`
-    /// and rejected if it does not match.
-    ///
-    /// ```
-    /// # use resolution::cnf::*;
-    /// let lit = Literal::new_negated("valid_name").unwrap();
-    /// assert_eq!(lit.name, "valid_name");
-    /// assert!(lit.negated);
-    ///
-    /// let invalid = Literal::new_negated("Not a valid name");
-    /// assert!(invalid.is_none());
-    /// ```
-    pub fn new_negated(name: &str) -> Option<Literal> {
-        if common::is_valid_name(name) {
-            Some(Literal {
-                name: name.into(),
-                negated: true,
-            })
-        } else {
-            None
+    pub fn new_negated(name: &str) -> Literal {
+        Literal {
+            name: name.into(),
+            negated: true,
         }
     }
 
@@ -70,7 +36,7 @@ impl Literal {
     ///
     /// ```
     /// # use resolution::cnf::*;
-    /// let mut lit = Literal::new("P").unwrap();
+    /// let mut lit = Literal::new("P");
     ///
     /// assert!(!lit.negated);
     /// lit.negate();
@@ -86,7 +52,7 @@ impl Literal {
     ///
     /// ```
     /// # use resolution::cnf::*;
-    /// let lit1 = Literal::new("P").unwrap();
+    /// let lit1 = Literal::new("P");
     /// let lit2 = lit1.clone_negated();
     ///
     /// assert!(!lit1.negated);
@@ -111,29 +77,29 @@ impl Display for Literal {
     }
 }
 
-/// A CNF term, i.e. a generalized disjunction of literals.
+/// A CNF clause, i.e. a generalized disjunction of literals.
 ///
-/// The [`cnf_term!`] macro provides a convenient way to create `Term`s.
+/// The [`cnf_clause!`] macro provides a convenient way to create `Clause`s.
 ///
-/// [`cnf_term!`]: ../macro.cnf_term.html
+/// [`cnf_clause!`]: ../macro.cnf_clause.html
 #[derive(Debug, Clone, Default)]
-pub struct Term {
+pub struct Clause {
     literals: HashSet<Literal>,
 }
 
-impl Term {
-    /// Create a new, empty `Term`.
-    pub fn new() -> Term {
-        Term {
+impl Clause {
+    /// Create a new, empty `Clause`.
+    pub fn new() -> Clause {
+        Clause {
             literals: HashSet::new(),
         }
     }
 
-    /// Add the given `Literal` to the `Term`, with the following caveats:
-    /// 1. If an identical `Literal` is already in the `Term`, this method
+    /// Add the given `Literal` to the `Clause`, with the following caveats:
+    /// 1. If an identical `Literal` is already in the `Clause`, this method
     ///    is a no-op.
     /// 2. If a `Literal` with the same name but opposite negation is already
-    ///    in the `Term`, this method removes that `Literal` instead of adding
+    ///    in the `Clause`, this method removes that `Literal` instead of adding
     ///    the given one. This reflects the fact that P ∨ ¬P is a tautology.
     pub fn add(&mut self, lit: Literal) {
         let l2 = Literal {
@@ -146,23 +112,23 @@ impl Term {
     }
 
     /// Remove the `Literal` equal to the given one, if it is present in the
-    /// `Term`. Returns `true` if the `Literal` was present.
+    /// `Clause`. Returns `true` if the `Literal` was present.
     pub fn remove(&mut self, lit: &Literal) -> bool {
         self.literals.remove(lit)
     }
 
     /// Remove and return the `Literal` equal to the given one, if it is present
-    /// in the `Term`.
+    /// in the `Clause`.
     pub fn take(&mut self, lit: &Literal) -> Option<Literal> {
         self.literals.take(lit)
     }
 
-    /// Is this `Term` empty?
+    /// Is this `Clause` empty?
     pub fn is_empty(&self) -> bool {
         self.literals.is_empty()
     }
 
-    /// Return a `HashSet` of all of the `Literal`s in this `Term`, negated.
+    /// Return a `HashSet` of all of the `Literal`s in this `Clause`, negated.
     fn negated_literals(&self) -> HashSet<Literal> {
         let mut literals = HashSet::new();
         for lit in &self.literals {
@@ -171,28 +137,28 @@ impl Term {
         literals
     }
 
-    /// Negate all `Literal`s in the `Term`.
+    /// Negate all `Literal`s in the `Clause`.
     pub fn negate_all(&mut self) {
         self.literals = self.negated_literals();
     }
 
-    /// Create a copy of the `Term` in which all `Literal`s are negated.
-    pub fn clone_negated(&self) -> Term {
-        Term {
+    /// Create a copy of the `Clause` in which all `Literal`s are negated.
+    pub fn clone_negated(&self) -> Clause {
+        Clause {
             literals: self.negated_literals(),
         }
     }
 
-    /// Return an iterator over references to the [`Literal`]s contained in this `Term`.
+    /// Return an iterator over references to the [`Literal`]s contained in this `Clause`.
     ///
     /// [`Literal`]: struct.Literal.html
     pub fn iter(&self) -> hash_set::Iter<Literal> {
         self.literals.iter()
     }
 
-    /// Attempt to resolve two `Term`s. If successful, returns the `Term`
+    /// Attempt to resolve two `Clause`s. If successful, returns the `Clause`
     /// resulting from the resolution.
-    pub fn resolve(&self, other: &Term) -> Option<Term> {
+    pub fn resolve(&self, other: &Clause) -> Option<Clause> {
         let neg_intersect = &self.negated_literals() & &other.literals;
         if neg_intersect.is_empty() {
             return None;
@@ -201,13 +167,13 @@ impl Term {
         let other_diff = &other.literals - &neg_intersect;
         let intersect = neg_intersect.iter().map(Literal::clone_negated).collect();
         let self_diff = &self.literals - &intersect;
-        Some(Term {
+        Some(Clause {
             literals: &other_diff | &self_diff,
         })
     }
 }
 
-impl Display for Term {
+impl Display for Clause {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
@@ -221,21 +187,21 @@ impl Display for Term {
     }
 }
 
-impl PartialEq for Term {
+impl PartialEq for Clause {
     fn eq(&self, other: &Self) -> bool {
         self.literals.difference(&other.literals).next() == None
     }
 }
 
-impl Eq for Term {}
+impl Eq for Clause {}
 
-/// The `Hash` implementation for `Term` is not the most efficient. Since a `Term` is
+/// The `Hash` implementation for `Clause` is not the most efficient. Since a `Clause` is
 /// represented by an underlying (unordered) `HashSet` of [`Literal`]s, the `Hash`
-/// implementation must sort the term's literals in order to produce consistent output.
+/// implementation must sort the clause's literals in order to produce consistent output.
 /// Use this sparingly.
 ///
 /// [`Literal`]: struct.Literal.html
-impl Hash for Term {
+impl Hash for Clause {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let mut v: Vec<_> = self.literals.iter().collect();
         v.sort_unstable();
@@ -243,12 +209,12 @@ impl Hash for Term {
     }
 }
 
-impl FromIterator<Literal> for Term {
-    fn from_iter<T>(iter: T) -> Term
+impl FromIterator<Literal> for Clause {
+    fn from_iter<T>(iter: T) -> Clause
     where
         T: IntoIterator<Item = Literal>,
     {
-        let mut t = Term::new();
+        let mut t = Clause::new();
         for lit in iter {
             t.add(lit);
         }
@@ -256,7 +222,7 @@ impl FromIterator<Literal> for Term {
     }
 }
 
-impl IntoIterator for Term {
+impl IntoIterator for Clause {
     type Item = Literal;
     type IntoIter = hash_set::IntoIter<Literal>;
     fn into_iter(self) -> Self::IntoIter {
@@ -264,7 +230,7 @@ impl IntoIterator for Term {
     }
 }
 
-impl<'a> IntoIterator for &'a Term {
+impl<'a> IntoIterator for &'a Clause {
     type Item = &'a Literal;
     type IntoIter = hash_set::Iter<'a, Literal>;
     fn into_iter(self) -> Self::IntoIter {
@@ -272,41 +238,41 @@ impl<'a> IntoIterator for &'a Term {
     }
 }
 
-/// A convenience macro for creating [`Term`]s. `cnf_term!` takes a comma-separated
+/// A convenience macro for creating [`Clause`]s. `cnf_clause!` takes a comma-separated
 /// list of identifiers, each one of which is optionally prepended with a `~` character.
-/// The result is a [`Term`] containing [`Literal`]s with the given identifiers as names,
+/// The result is a [`Clause`] containing [`Literal`]s with the given identifiers as names,
 /// negated if the corresponding identifier was prefaced with a `~`.
 ///
 /// ```
 /// # #[macro_use] extern crate resolution;
 /// # use resolution::cnf::*;
-/// // Manually construct a Term
-/// let mut term1 = Term::new();
-/// term1.add(Literal::new("P").unwrap());
-/// term1.add(Literal::new_negated("Q").unwrap());
-/// term1.add(Literal::new("R").unwrap());
+/// // Manually construct a Clause
+/// let mut clause1 = Clause::new();
+/// clause1.add(Literal::new("P"));
+/// clause1.add(Literal::new_negated("Q"));
+/// clause1.add(Literal::new("R"));
 ///
-/// // Construct the same term with `cnf_term!`
-/// let term2 = cnf_term!(P, ~Q, R);
-/// assert_eq!(term1, term2);
+/// // Construct the same clause with `cnf_clause!`
+/// let clause2 = cnf_clause!(P, ~Q, R);
+/// assert_eq!(clause1, clause2);
 ///
-/// // `Term`s are irrespective of ordering
-/// let term3 = cnf_term!(~Q, R, P);
-/// assert_eq!(term1, term3);
+/// // `Clause`s are irrespective of ordering
+/// let clause3 = cnf_clause!(~Q, R, P);
+/// assert_eq!(clause1, clause3);
 /// ```
 ///
-/// [`Term`]: cnf/struct.Term.html
+/// [`Clause`]: cnf/struct.Clause.html
 /// [`Literal`]: cnf/struct.Literal.html
 #[macro_export]
-macro_rules! cnf_term {
+macro_rules! cnf_clause {
     (@accum () -> ($($body:tt)*)) => { vec![$($body)*] };
-    (@accum (, $($tail:tt)*) -> ($($body:tt)*)) => { cnf_term!(@accum ($($tail)*) -> ($($body)*)) };
+    (@accum (, $($tail:tt)*) -> ($($body:tt)*)) => { cnf_clause!(@accum ($($tail)*) -> ($($body)*)) };
     (@accum (~$name:ident $($tail:tt)*) -> ($($body:tt)*))
-        => { cnf_term!(@accum ($($tail)*) -> (Literal::new_negated(stringify!($name)).unwrap(), $($body)*)) };
+        => { cnf_clause!(@accum ($($tail)*) -> (Literal::new_negated(stringify!($name)), $($body)*)) };
     (@accum ($name:ident $($tail:tt)*) -> ($($body:tt)*))
-        => { cnf_term!(@accum ($($tail)*) -> (Literal::new(stringify!($name)).unwrap(), $($body)*)) };
+        => { cnf_clause!(@accum ($($tail)*) -> (Literal::new(stringify!($name)), $($body)*)) };
     [$($props:tt)*] => {
-        cnf_term!(@accum ($($props)*) -> ()).into_iter().collect::<Term>()
+        cnf_clause!(@accum ($($props)*) -> ()).into_iter().collect::<Clause>()
     };
 }
 
@@ -315,73 +281,73 @@ mod test {
     use super::*;
 
     #[test]
-    fn term_macro() {
-        let t = cnf_term!(P, Q);
-        let mut expected = Term::new();
-        expected.add(Literal::new("P").unwrap());
-        expected.add(Literal::new("Q").unwrap());
+    fn clause_macro() {
+        let t = cnf_clause!(P, Q);
+        let mut expected = Clause::new();
+        expected.add(Literal::new("P"));
+        expected.add(Literal::new("Q"));
         assert_eq!(t, expected);
 
-        let t = cnf_term!(P, ~P);
-        let expected = Term::new();
+        let t = cnf_clause!(P, ~P);
+        let expected = Clause::new();
         assert_eq!(t, expected);
     }
 
     #[test]
     fn resolve1() {
-        let t1 = cnf_term!(P);
-        let t2 = cnf_term!(~P);
+        let c1 = cnf_clause!(P);
+        let c2 = cnf_clause!(~P);
 
-        let res = t1.resolve(&t2).expect("Resolution returned None");
+        let res = c1.resolve(&c2).expect("Resolution returned None");
         assert!(res.is_empty());
 
-        let res = t2.resolve(&t1).expect("Resolution returned None");
+        let res = c2.resolve(&c1).expect("Resolution returned None");
         assert!(res.is_empty());
     }
 
     #[test]
     fn resolve2() {
-        let t1 = cnf_term!(P, Q);
-        let t2 = cnf_term!(~P);
-        let expected_res = cnf_term!(Q);
+        let c1 = cnf_clause!(P, Q);
+        let c2 = cnf_clause!(~P);
+        let expected_res = cnf_clause!(Q);
 
-        let res = t1.resolve(&t2).expect("Resolution returned None");
+        let res = c1.resolve(&c2).expect("Resolution returned None");
         assert_eq!(res, expected_res);
 
-        let res = t2.resolve(&t1).expect("Resolution returned None");
+        let res = c2.resolve(&c1).expect("Resolution returned None");
         assert_eq!(res, expected_res);
     }
 
     #[test]
     fn resolve_multi() {
-        let t1 = cnf_term!(P, ~Q);
-        let t2 = cnf_term!(R, Q);
-        let expected_res = cnf_term!(P, R);
+        let c1 = cnf_clause!(P, ~Q);
+        let c2 = cnf_clause!(R, Q);
+        let expected_res = cnf_clause!(P, R);
 
-        let res = t1.resolve(&t2).expect("Resolution returned None");
+        let res = c1.resolve(&c2).expect("Resolution returned None");
         assert_eq!(res, expected_res);
 
-        let res = t2.resolve(&t1).expect("Resolution returned None");
+        let res = c2.resolve(&c1).expect("Resolution returned None");
         assert_eq!(res, expected_res);
     }
 
     #[test]
     fn resolve_none() {
-        let t1 = cnf_term!(P);
-        let t2 = cnf_term!(Q);
+        let c1 = cnf_clause!(P);
+        let c2 = cnf_clause!(Q);
 
-        if let Some(_) = t1.resolve(&t2) {
+        if let Some(_) = c1.resolve(&c2) {
             panic!("Resolution returned Some");
         }
 
-        if let Some(_) = t2.resolve(&t1) {
+        if let Some(_) = c2.resolve(&c1) {
             panic!("Resolution returned Some");
         }
     }
 
     #[test]
     fn resolve_self() {
-        let t = cnf_term!(P);
+        let t = cnf_clause!(P);
         if let Some(_) = t.resolve(&t) {
             panic!("Self-resolution returned Some");
         }
@@ -389,30 +355,29 @@ mod test {
 
     #[test]
     fn add_identical() {
-        let mut t = cnf_term!(P);
-        t.add(Literal::new("P").unwrap());
+        let mut t = cnf_clause!(P);
+        t.add(Literal::new("P"));
 
-        assert_eq!(t, cnf_term!(P));
+        assert_eq!(t, cnf_clause!(P));
     }
 
     #[test]
     fn add_negated() {
-        let mut t = cnf_term!(P);
-        t.add(Literal::new_negated("P").unwrap());
+        let mut t = cnf_clause!(P);
+        t.add(Literal::new_negated("P"));
 
-        assert_eq!(t, cnf_term!());
+        assert_eq!(t, cnf_clause!());
     }
 
     #[test]
     fn collect() {
         let t = vec![Literal::new("P"), Literal::new("Q")]
             .into_iter()
-            .map(|o| o.unwrap())
-            .collect::<Term>();
+            .collect::<Clause>();
 
-        let mut expected = Term::new();
-        expected.add(Literal::new("P").unwrap());
-        expected.add(Literal::new("Q").unwrap());
+        let mut expected = Clause::new();
+        expected.add(Literal::new("P"));
+        expected.add(Literal::new("Q"));
 
         assert_eq!(t, expected);
     }
@@ -421,10 +386,9 @@ mod test {
     fn collect_negated() {
         let t = vec![Literal::new("P"), Literal::new_negated("P")]
             .into_iter()
-            .map(|o| o.unwrap())
-            .collect::<Term>();
+            .collect::<Clause>();
 
-        let expected = Term::new();
+        let expected = Clause::new();
 
         assert_eq!(t, expected);
     }
