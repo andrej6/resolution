@@ -15,16 +15,16 @@ This project is written in Rust and uses Cargo as a build system. The following
 should download all dependencies and build the project:
 
 ```bash
-cargo build
+$ cargo build
 ```
 
-Currently, there are no dependencies which require special consideration.
-However, we will eventually be depending on [gtk-rs](https://crates.io/crates/gtk),
+The only dependency that might require special consideration is
+[gtk-rs](https://crates.io/crates/gtk),
 which requires the GTK+3 development libraries to be installed. On
 Debian-based Linux:
 
 ```bash
-sudo apt update; sudo apt install libgtk-3-dev
+$ sudo apt update; sudo apt install libgtk-3-dev
 ```
 
 See the gtk-rs docs for other platforms and troubleshooting.
@@ -35,7 +35,7 @@ We will strive to keep the in-source developer documentation up to date. To
 build and view the documentation:
 
 ```bash
-cargo doc --open
+$ cargo doc --open
 ```
 
 ## License

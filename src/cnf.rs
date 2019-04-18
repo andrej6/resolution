@@ -1,6 +1,5 @@
 //! Clauses and conjunctive normal form representation of logic expressions.
 
-//use super::common;
 use std::cmp::{Eq, PartialEq};
 use std::collections::{hash_set, HashSet};
 use std::fmt::{self, Display, Formatter};
@@ -189,7 +188,7 @@ impl Display for Clause {
 
 impl PartialEq for Clause {
     fn eq(&self, other: &Self) -> bool {
-        self.literals.difference(&other.literals).next() == None
+        self.literals.difference(&other.literals).next().is_none()
     }
 }
 
@@ -238,7 +237,9 @@ impl<'a> IntoIterator for &'a Clause {
     }
 }
 
-/// A convenience macro for creating [`Clause`]s. `cnf_clause!` takes a comma-separated
+/// A convenience macro for creating [`Clause`]s.
+///
+/// `cnf_clause!` takes a comma-separated
 /// list of identifiers, each one of which is optionally prepended with a `~` character.
 /// The result is a [`Clause`] containing [`Literal`]s with the given identifiers as names,
 /// negated if the corresponding identifier was prefaced with a `~`.
