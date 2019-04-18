@@ -1,0 +1,4 @@
+---CLAUSES---
+label1: {~P, Q} ()
+label2: {~Q, R} ()
+label3: {P, R} (label1, label2)

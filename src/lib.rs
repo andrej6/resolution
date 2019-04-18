@@ -11,3 +11,4 @@ pub mod cnf;
 pub mod resolution_graph;
 
 pub mod gui;
+pub mod fileparser;
