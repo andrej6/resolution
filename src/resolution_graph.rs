@@ -3,9 +3,9 @@
 use crate::cnf::{Clause, Literal};
 
 use std::collections::{HashMap, HashSet};
+use std::convert::From;
 use std::fmt::{self, Display, Formatter};
 use std::num::NonZeroU32;
-use std::convert::From;
 
 /// An ID for a `Clause` in a `ResolutionGraph`.
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Hash)]
@@ -125,6 +125,18 @@ impl ResolutionGraph {
         Ok(())
     }
 
+    pub fn add_resolution_ids(
+        &mut self,
+        parent1: ClauseId,
+        parent2: ClauseId,
+        child: ClauseId,
+    ) -> Result<(), &str> {
+        self.add_resolution(Resolution {
+            parents: (parent1, parent2),
+            child,
+        })
+    }
+
     /// Verify the correctness of all resolutions in the graph.
     pub fn verify(&self) -> Result<(), ResolutionErr> {
         let mut failed = Vec::new();
@@ -232,5 +244,64 @@ mod test {
         assert_eq!(graph.get_clause(a).unwrap(), &cnf_clause!(P, Q));
         assert_eq!(graph.get_clause(b).unwrap(), &cnf_clause!(~P, R));
         assert!(graph.get_clause(ClauseId::new(100).unwrap()).is_none());
+    }
+
+    #[test]
+    fn graph_correct_resolution() {
+        let mut graph = ResolutionGraph::new();
+        let a = graph.add_clause(cnf_clause!(P, Q));
+        let b = graph.add_clause(cnf_clause!(~P, R));
+        let c = graph.add_clause(cnf_clause!(Q, R));
+
+        graph.add_resolution_ids(a, b, c).unwrap();
+
+        graph.verify().unwrap();
+    }
+
+    #[test]
+    fn graph_failed_resolution() {
+        let mut graph = ResolutionGraph::new();
+        let a = graph.add_clause(cnf_clause!(P, Q));
+        let b = graph.add_clause(cnf_clause!(~R, S));
+        let c = graph.add_clause(cnf_clause!(Q, R));
+
+        graph.add_resolution_ids(a, b, c).unwrap();
+
+        let r = graph.verify();
+        assert!(r.is_err());
+        println!("===graph_failed_resolution===\n{}", r.err().unwrap());
+    }
+
+    #[test]
+    fn graph_incorrect_resolution() {
+        let mut graph = ResolutionGraph::new();
+        let a = graph.add_clause(cnf_clause!(P, Q));
+        let b = graph.add_clause(cnf_clause!(~P, R));
+        let c = graph.add_clause(cnf_clause!(Q, S));
+
+        graph.add_resolution_ids(a, b, c).unwrap();
+
+        let r = graph.verify();
+        assert!(r.is_err());
+        println!("===graph_incorrect_resolution===\n{}", r.err().unwrap());
+    }
+
+    #[test]
+    fn graph_multiple_failures() {
+        let mut graph = ResolutionGraph::new();
+        let p_q = graph.add_clause(cnf_clause!(P, Q));
+        let np_r = graph.add_clause(cnf_clause!(~P, R));
+        let q_s = graph.add_clause(cnf_clause!(Q, S));
+        let q_nr = graph.add_clause(cnf_clause!(Q, ~R));
+        let t_v = graph.add_clause(cnf_clause!(T, V));
+        let q_r = graph.add_clause(cnf_clause!(Q, R));
+
+        graph.add_resolution_ids(p_q, np_r, q_s).unwrap();
+        graph.add_resolution_ids(q_s, q_nr, t_v).unwrap();
+        graph.add_resolution_ids(p_q, np_r, q_r).unwrap();
+
+        let r = graph.verify();
+        assert!(r.is_err());
+        println!("===graph_multiple_failures===\n{}", r.err().unwrap());
     }
 }

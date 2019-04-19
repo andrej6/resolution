@@ -69,9 +69,9 @@ impl Literal {
 impl Display for Literal {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         if self.negated {
-            write!(f, "{}", self.name)
-        } else {
             write!(f, "¬{}", self.name)
+        } else {
+            write!(f, "{}", self.name)
         }
     }
 }
