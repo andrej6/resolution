@@ -17,132 +17,135 @@ fn get_clauses(filename: &str) -> Vec<Clause> {
         Ok(file) => file,
     };
 
-    let mut s = String::new();
-    match file.read_to_string(&mut s) {
+    let mut input = String::new();
+    match file.read_to_string(&mut input) {
         Err(why) => panic!("couldn't read {}: {}", display, why.description()),
-        Ok(_) => print!("{} contains:\n{}", display, s),
+        Ok(_) => print!("{} contains:\n{}", display, input),
     }
 
-    let inputlength = s.len();
-    let mut current_index = 0;
-    let mut slice = &s[..14];
+    let inputlength = input.len();
+    let mut slice = &input[..14];
+    let mut vec = Vec::new();
 
-    let mut clause = Clause::new();
-    let mut clause_label = String::new();
-    let mut parent1 = String::new();
-    let mut parent2 = String::new();
+    for line in input.lines() {
 
-    println!("first 14 charactrers: {}\n", slice);
+        let mut current_index = 0;
+        let mut clause = Clause::new();
+        let mut clause_label = String::new();
+        let mut parent1 = String::new();
+        let mut parent2 = String::new();
 
-    current_index = 14;
+        //println!("first 14 charactrers: {}\n", slice);
 
-    //read up until the first space
 
-    let mut i = current_index;
+        //read up until the first space
 
-    while i+1 <= inputlength {
-        slice = &s[i..(i+1)];
-        if slice == ":" {
-            println!("FOUND COLON AT INDEX {}", i);
-            break;
-        } else {
-            println!("read {}", slice);
+        let mut i = current_index;
+
+        while i+1 <= inputlength {
+            slice = &line[i..(i+1)];
+            if slice == ":" {
+                println!("FOUND COLON AT INDEX {}", i);
+                break;
+            } else {
+                println!("read {}", slice);
+            }
+
+            i += 1;
         }
 
-        i += 1;
-    }
+        clause_label = line[current_index..i].to_string();
 
-    clause_label = s[current_index..i].to_string();
+        println!("clause label: {}", clause_label);
 
-    println!("clause label: {}", clause_label);
+        current_index = i+3;
 
-    current_index = i+3;
-
-    //read until the comma
-    
-    i = current_index;
-    while i+1 <= inputlength {
-        slice = &s[i..(i+1)];
-        if slice == "}" {
-            println!("FOUND }} AT INDEX {}", i);
-            break;
-        } else {
-            println!("read {}", slice);
-        }
-
-        i += 1;
-    }
-
-    let mut clause_strings = s[current_index..i].to_string();
-
-    println!("clause names: {}", clause_strings);
-
-    //split the strings and strip the newlines
-
-    let mut split = clause_strings.split(",");
-
-    for st in split {
-        let mut name = st.trim();
-        println!("string: {}      length: {}", name, name.len());
-
-        slice = &name[..1];
-
-        println!("slice: {}", slice);
-
-        if slice == "~" {
-            println!("this one's negated");
-            clause.add(Literal::new_negated(&name[1..]));
-        } else {
-            println!("not negated");
-            clause.add(Literal::new(name));
-        }
-    }
+        //read until the comma
         
-    //read until the first (
+        i = current_index;
+        while i+1 <= inputlength {
+            slice = &line[i..(i+1)];
+            if slice == "}" {
+                println!("FOUND }} AT INDEX {}", i);
+                break;
+            } else {
+                println!("read {}", slice);
+            }
 
-    current_index = i+3;
-    i = current_index;
-
-    while i+1 <= inputlength {
-        slice = &s[i..(i+1)];
-        if slice == ")" {
-            println!("FOUND ) AT INDEX {}", i);
-            break;
-        } else {
-            println!("read {}", slice);
+            i += 1;
         }
 
-        i += 1;
-    }
+        let mut clause_strings = line[current_index..i].to_string();
+
+        println!("clause names: {}", clause_strings);
+
+        //split the strings and strip the newlines
+
+        let mut split = clause_strings.split(",");
+
+        for st in split {
+            let mut name = st.trim();
+            println!("string: {}      length: {}", name, name.len());
+
+            slice = &name[..1];
+
+            println!("slice: {}", slice);
+
+            if slice == "~" {
+                println!("this one's negated");
+                clause.add(Literal::new_negated(&name[1..]));
+            } else {
+                println!("not negated");
+                clause.add(Literal::new(name));
+            }
+        }
+            
+        //read until the first (
+
+        current_index = i+3;
+        i = current_index;
+
+        while i+1 <= inputlength {
+            slice = &line[i..(i+1)];
+            if slice == ")" {
+                println!("FOUND ) AT INDEX {}", i);
+                break;
+            } else {
+                println!("read {}", slice);
+            }
+
+            i += 1;
+        }
 
 
-    let mut full_labels = s[current_index..i].to_string();
-    let mut length_of_labels = full_labels.len();
-    println!("full labels: {}      length: {}", full_labels, length_of_labels);
+        let mut full_labels = line[current_index..i].to_string();
+        let mut length_of_labels = full_labels.len();
+        println!("full labels: {}      length: {}", full_labels, length_of_labels);
 
-    current_index = i+1;
-
-
+        current_index = i+1;
 
 
 
+        vec.push(clause);
 
-    slice = &s[current_index..(current_index+1)];
 
-    println!("next char: {}", slice);
-    if slice == "\n" {
-        println!("reached end of line!");
+        //slice = &line[current_index..(current_index+1)];
+
+        //println!("next char: {}", slice);
+        //if slice == "\n" {
+        //    println!("reached end of line!");
+        //}
+
     }
 
 
 
     println!("\n Cool B-)\n");
 
-    let mut vec = Vec::new();
     //clause.add(Literal::new("P"));
     //clause.add(Literal::new_negated("Q"));
 
-    vec.push(clause);
+    //vec.push(clause);
 
     return vec;
 }
