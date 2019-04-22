@@ -7,6 +7,7 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn get_clauses(filename: &str) -> ResolutionGraph {
     let filepath = format!("./src/{}", String::from(filename));
     let path = Path::new(&filepath);
@@ -24,7 +25,7 @@ fn get_clauses(filename: &str) -> ResolutionGraph {
     }
 
     let inputlength = input.len();
-    let mut slice = &input[..14];
+    let mut slice;
     let mut vec = Vec::new();
 
     
@@ -35,7 +36,7 @@ fn get_clauses(filename: &str) -> ResolutionGraph {
 
         let mut current_index = 0;
         let mut clause = Clause::new();
-        let mut clause_label = String::new();
+        let mut clause_label;
         let mut parent1 = String::new();
         let mut parent2 = String::new();
 
@@ -69,12 +70,12 @@ fn get_clauses(filename: &str) -> ResolutionGraph {
 
 
         //get each of the clause literals, and add each one to the current clause object
-        let mut clause_strings = line[current_index..i].to_string();
+        let clause_strings = line[current_index..i].to_string();
 
         let mut split = clause_strings.split(",");
 
         for st in split {
-            let mut name = st.trim();
+            let name = st.trim();
 
             if st.len() > 0 {
                 slice = &name[..1];
@@ -101,8 +102,7 @@ fn get_clauses(filename: &str) -> ResolutionGraph {
         }
 
 
-        let mut full_labels = line[current_index..i].to_string();
-        let mut length_of_labels = full_labels.len();
+        let full_labels = line[current_index..i].to_string();
 
         if full_labels.len() != 0 {
             let mut parents_vec = Vec::new();
@@ -110,7 +110,7 @@ fn get_clauses(filename: &str) -> ResolutionGraph {
             split = full_labels.split(",");
 
             for st in split {
-                let mut lab = st.trim();
+                let lab = st.trim();
                 parents_vec.push(lab);
             }
 
@@ -129,13 +129,13 @@ fn get_clauses(filename: &str) -> ResolutionGraph {
 
     //construct the resolution graph
 
-    let mut index = 0usize;
+    let mut index;
     let mut will_repeat = true;
     let mut bools = Vec::new();
     let mut ids = HashMap::new();
 
 
-    for item in vec.iter() {
+    for _item in vec.iter() {
         bools.push(false);
     }
 
@@ -147,13 +147,13 @@ fn get_clauses(filename: &str) -> ResolutionGraph {
 
         while index < vec.len() {
             if bools[index] == false {
-                let mut label = &vec[index].0;
-                let mut cl = &vec[index].1;
-                let mut p1 = &vec[index].2;
-                let mut p2 = &vec[index].3;
+                let label = &vec[index].0;
+                let cl = &vec[index].1;
+                let p1 = &vec[index].2;
+                let p2 = &vec[index].3;
 
                 if p1.len() == 0 && p2.len() == 0 {
-                    let mut id = graph.add_clause(cl.clone());
+                    let id = graph.add_clause(cl.clone());
                     ids.insert(label, id);
                     bools[index] = true;
                     will_repeat = true;
@@ -164,13 +164,13 @@ fn get_clauses(filename: &str) -> ResolutionGraph {
 
                     match ids.get(p1) {
                         Some(&cid) => {
-                            let mut p1id = cid;
+                            let p1id = cid;
                             match ids.get(p2) {
                                 Some(&cid2) => {
-                                    let mut p2id = cid2;
-                                    let mut id = graph.add_clause(cl.clone());
+                                    let p2id = cid2;
+                                    let id = graph.add_clause(cl.clone());
                                     ids.insert(label, id);
-                                    graph.add_resolution_ids(p1id, p2id, id);
+                                    graph.add_resolution_ids(p1id, p2id, id).expect("Failed to add resolution");
                                     bools[index] = true;
                                     will_repeat = true;
                                     index += 1
