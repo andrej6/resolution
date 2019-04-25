@@ -1,10 +1,8 @@
-# Resolution
+# ARes
 
-(Working title.)
-
-A proof interface for creating resolution graphs. Minimal goals are to support
+A tool for verifying resolution graphs. Minimal goals are to support
 creation and verification of resolution-based proofs of propositional logic
-arguments. Hopefully we will also include first-order logic arguments.
+arguments. 
 
 Created as a term project for Professor Bram van Heuveln's _Computability and
 Logic_ course at RPI, Spring 2019.
@@ -18,16 +16,28 @@ should download all dependencies and build the project:
 $ cargo build
 ```
 
-The only dependency that might require special consideration is
-[gtk-rs](https://crates.io/crates/gtk),
-which requires the GTK+3 development libraries to be installed. On
-Debian-based Linux:
+## How to Use
+
+To use ARes, run the binary from the command line with the resolution graph's filename
+as the first argument:
 
 ```bash
-$ sudo apt update; sudo apt install libgtk-3-dev
+$ ./ARes filename
 ```
 
-See the gtk-rs docs for other platforms and troubleshooting.
+The file must have the following format:
+
+```
+label1: {P, Q} ()
+label2: {~Q, R} ()
+label3: {P, R} (label1, label2)
+```
+
+Each clause must have an identifying label ending in a colon. The clause literals themselves
+are a comma separated list of identifiers contained between curly braces. The identifiers
+can be any string. If a clause is the product of the resolution of other clauses, it must
+its list of parent clauses in a parenthesized, comma-separated list after the list of clauses.
+The parentheses must be present even if the clause has no parents.
 
 ## Documentation
 
