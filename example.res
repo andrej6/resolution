@@ -1,0 +1,5 @@
+here_is_a_clause: {P, Q} ()
+HereIsAnotherOne: {~P, R, S} ()
+resolveThem: {Q, R, S} (here_is_a_clause, HereIsAnotherOne)
+clause4: {~R, ~S} ()
+_resolution_2: {Q} (resolveThem, clause4)
