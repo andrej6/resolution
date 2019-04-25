@@ -1,17 +1,10 @@
 [package]
-name = "resolution"
+name = "ares"
 version = "0.1.0"
 authors = ["John Andrews <andrej6@rpi.edu>", "Jacques Becker <beckej3@rpi.edu>"]
 edition = "2018"
-build = "build.rs" # LALRPOP preprocessing
-
 
 [dependencies]
-regex = "1.1"
-lazy_static = "1.2"
-gtk = "0.6"
-cairo-rs = "0.6"
-lalrpop-util = "0.16.3"
-
-[build-dependencies]
-lalrpop = "0.16.3"
+#regex = "1.1"
+#lazy_static = "1.2"
+structopt = "0.2.15"
