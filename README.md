@@ -1,5 +1,7 @@
 # ARes
 
+John Andrews and Jacques Becker - April 25th, 2019
+
 A tool for verifying resolution graphs. Minimal goals are to support
 creation and verification of resolution-based proofs of propositional logic
 arguments. 
