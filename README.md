@@ -36,7 +36,7 @@ label3: {P, R} (label1, label2)
 Each clause must have an identifying label ending in a colon. The clause literals themselves
 are a comma separated list of identifiers contained between curly braces. The identifiers
 can be any string. If a clause is the product of the resolution of other clauses, it must
-its list of parent clauses in a parenthesized, comma-separated list after the list of clauses.
+list its parent clauses in a parenthesized, comma-separated list after the list of clauses.
 The parentheses must be present even if the clause has no parents.
 
 ## Documentation
