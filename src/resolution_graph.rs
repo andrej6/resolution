@@ -1,7 +1,6 @@
 //! Collections of `Clauses` and resolution graphs.
 
-use crate::cnf::{Clause, Literal};
-
+use crate::cnf::Clause;
 use std::collections::{HashMap, HashSet};
 use std::convert::From;
 use std::fmt::{self, Display, Formatter};
@@ -137,8 +136,27 @@ impl ResolutionGraph {
         })
     }
 
-    /// Verify the correctness of all resolutions in the graph.
     pub fn verify(&self) -> Result<(), ResolutionErr> {
+        let res = self.verify_correct();
+        let incomplete = self.verify_complete();
+
+        if let Err(mut res) = res {
+            res.incomplete = incomplete;
+            Err(res)
+        } else if incomplete {
+            Err(ResolutionErr {
+                graph: &self,
+                failed: Vec::new(),
+                incorrect: Vec::new(),
+                incomplete,
+            })
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Verify the correctness of all resolutions in the graph.
+    pub fn verify_correct(&self) -> Result<(), ResolutionErr> {
         let mut failed = Vec::new();
         let mut incorrect = Vec::new();
         for res in &self.resolutions {
@@ -165,10 +183,22 @@ impl ResolutionGraph {
                 graph: &self,
                 failed,
                 incorrect,
+                incomplete: false,
             })
         } else {
             Ok(())
         }
+    }
+
+    pub fn verify_complete(&self) -> bool {
+        /*
+        for id1 in self.clauses {
+            for id2 in self.clauses {
+
+            }
+        }
+        */
+        true
     }
 }
 
@@ -190,6 +220,7 @@ pub struct ResolutionErr<'a> {
     pub graph: &'a ResolutionGraph,
     pub failed: Vec<&'a Resolution>,
     pub incorrect: Vec<&'a Resolution>,
+    pub incomplete: bool,
 }
 
 impl<'a> Display for ResolutionErr<'a> {
@@ -225,6 +256,11 @@ impl<'a> Display for ResolutionErr<'a> {
                 )?;
             }
         }
+
+        if self.incomplete {
+            writeln!(f, "The graph is incomplete; there are still clauses that can be resolved.")?;
+        }
+
         Ok(())
     }
 }

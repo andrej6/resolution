@@ -1,3 +1,4 @@
+#![allow(unused_imports, dead_code)]
 use crate::cnf::{Clause, Literal};
 
 use std::num::NonZeroU32;

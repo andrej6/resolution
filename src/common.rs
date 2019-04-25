@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use regex::Regex;
 
 /// Check the given string against the identifier regex `[a-zA-Z_][a-zA-Z0-9_]*`
